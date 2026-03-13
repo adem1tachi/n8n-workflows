@@ -1,0 +1,1199 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "ENESSEA DIMO",
+        "formDescription": "Just a tast",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name"
+            },
+            {
+              "fieldLabel": "gmail",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "How are you",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "good"
+                  },
+                  {
+                    "option": "its okey"
+                  },
+                  {
+                    "option": "not good"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Whay?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "i don't know"
+                  },
+                  {
+                    "option": "i have a reason"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "data",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        -256
+      ],
+      "id": "a35adcf6-bbbd-4c92-8011-3cb9440aa0d9",
+      "name": "On form submission",
+      "webhookId": "38c66cac-9a31-4f37-a47e-304d7f7511ff",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        256
+      ],
+      "id": "47b72f31-2689-4552-bca5-2ccf27b01473",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\n      \"type\": \"string\",\n      \"description\": \"The title of the book.\"\n    },\n    \"author\": {\n      \"type\": \"string\",\n      \"description\": \"The author of the book.\"\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"A concise summary of the book in 50–60 words.\"\n    }\n  },\n  \"required\": [\"title\", \"author\", \"summary\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1552,
+        512
+      ],
+      "id": "dc0aba04-614f-405b-92a0-ef949b5dd460",
+      "name": "Output"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        512
+      ],
+      "id": "b9cc20a6-e2bc-4fb0-ab52-2cc5d1957372",
+      "name": "Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ZqNv4FkOmMFwZsM7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json;\nconst answers = input[0] || input;  \n\nconst scoring = {\n  \"How are you\": { \n    \"good\": 10, \n    \"its okey\": 5, \n    \"not good\": 0 \n  },\n  \"Whay?\": { \n    \"i don't know\": 0, \n    \"i have a reason\": 5 \n  }\n};\n\nlet total = 0;\n\nfor (let q in scoring) {\n  const userAnswer = answers[q];\n  if (scoring[q] && scoring[q][userAnswer] !== undefined) {\n    total += scoring[q][userAnswer];\n  }\n}\n\nreturn [{\n  totalScore: total\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        0
+      ],
+      "id": "5646c417-7bbc-4fc9-ac37-8825811b454d",
+      "name": "score calculation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert in literary text analysis.  \nYou will be given a text containing a book review.  \nYour task is to extract the following information accurately:\n\n1. The title of the book  \n2. The author’s name  \n3. A concise summary of the book in 50–60 words\n\nIf any piece of information is missing, write \"unknown\" for that field.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        256
+      ],
+      "id": "d807d484-0b35-48ff-9d94-73bb7be8e4b4",
+      "name": "text analysis",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "file",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1VkWdqdnrtFngcN4_QAZVRhbv7hf4Lfud",
+          "mode": "list",
+          "cachedResultName": "ENSSEA FORM",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1VkWdqdnrtFngcN4_QAZVRhbv7hf4Lfud"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        592,
+        256
+      ],
+      "id": "95205fcc-5ff0-48b5-b6ab-cf3b326c8aec",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3evy9gWg3pjgdGUH",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        864,
+        256
+      ],
+      "id": "60aa9d25-bdba-48e1-be28-5891263ff88a",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3evy9gWg3pjgdGUH",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 208,
+        "width": 336,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "1b24b360-1925-45d6-98ba-c6fb65e9490c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE",
+          "mode": "list",
+          "cachedResultName": "ENSSEA form dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2061900719,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit#gid=2061900719"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name ": "={{ $json.Name }}",
+            "mail ": "={{ $json.gmail }}",
+            "Question 1": "={{ $json['How are you'] }}",
+            "Question 2": "={{ $json['Whay?'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name ",
+              "displayName": "name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mail ",
+              "displayName": "mail ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Question 1",
+              "displayName": "Question 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Question 2",
+              "displayName": "Question 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 1",
+              "displayName": "file 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title 1",
+              "displayName": "title 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author 1",
+              "displayName": "author 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary 1",
+              "displayName": "summary 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 2",
+              "displayName": "file 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title 2",
+              "displayName": "title 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "author 2",
+              "displayName": "author 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary 2",
+              "displayName": "summary 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "file 3",
+              "displayName": "file 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        576,
+        0
+      ],
+      "id": "a003f984-dbc9-497f-a78b-6bad7a52f8c8",
+      "name": "Create a row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE",
+          "mode": "list",
+          "cachedResultName": "ENSSEA form dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2061900719,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit#gid=2061900719"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "score": "={{ $json.totalScore }}",
+            "mail ": "={{ $('On form submission').item.json.gmail }}"
+          },
+          "matchingColumns": [
+            "mail "
+          ],
+          "schema": [
+            {
+              "id": "name ",
+              "displayName": "name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "mail ",
+              "displayName": "mail ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Question 1",
+              "displayName": "Question 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Question 2",
+              "displayName": "Question 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "file 1",
+              "displayName": "file 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title 1",
+              "displayName": "title 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "author 1",
+              "displayName": "author 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary 1",
+              "displayName": "summary 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "file 2",
+              "displayName": "file 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "file 3",
+              "displayName": "file 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "b23dd671-27be-4c58-befb-3b9273eb3067",
+      "name": "Recording the score",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node - Normalize multiple uploaded files into items with binary.file\n// Input: the form submission item (or items)\n// Output: one item per uploaded binary file with binary.file set\n\nconst outputs = [];\n\n// iterate over all incoming items (usually one submission)\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const formJson = item.json || {};\n  const binary = item.binary || {};\n\n  // collect binary property names\n  const binKeys = Object.keys(binary);\n\n  if (binKeys.length === 0) {\n    // no binary found: check if there is a JSON array of files (e.g., { data: [{url, name}, ...] })\n    if (Array.isArray(formJson.data) && formJson.data.length > 0) {\n      formJson.data.forEach((f, idx) => {\n        outputs.push({\n          json: {\n            formData: formJson,\n            originalName: f.name || f.filename || `file_${idx+1}`,\n            fileIndex: idx + 1,\n            totalFiles: formJson.data.length,\n            fileUrl: f.url || f.downloadUrl || null\n          }\n          // no binary attached here - add HTTP Request node after this to download file into binary.file\n        });\n      });\n      continue;\n    }\n\n    // fallback: keep one item so flow doesn't break\n    outputs.push({\n      json: {\n        formData: formJson,\n        originalName: 'no-binary-found',\n        fileIndex: 1,\n        totalFiles: 1\n      }\n    });\n    continue;\n  }\n\n  // If binary keys exist, create one output item per binary property\n  for (let k = 0; k < binKeys.length; k++) {\n    const key = binKeys[k];\n    const bin = binary[key];\n\n    // build new item with binary.file set (Extract node will look for 'file')\n    const out = {\n      json: {\n        formData: formJson,\n        originalName: bin.fileName || key || `file_${k+1}`,\n        originalBinaryKey: key,\n        fileIndex: k + 1,\n        totalFiles: binKeys.length\n      },\n      binary: {\n        // move whatever was in item.binary[key] into binary.file\n        file: bin\n      }\n    };\n\n    outputs.push(out);\n  }\n}\n\nreturn outputs;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "78d7e5bd-8899-4b4b-bf9b-2cab60d95d7d",
+      "name": "File separation"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 208,
+        "width": 464,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "e97fa8e9-c350-4a80-ad68-f3c5c732b0a6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE",
+          "mode": "list",
+          "cachedResultName": "ENSSEA form dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2061900719,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit#gid=2061900719"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "mail ": "={{ $items(\"On form submission\").first().json.gmail }}",
+            "file 1": "={{ $json.uploadedFiles[0].url }}",
+            "file 2": "={{ $json.uploadedFiles[1].url }}"
+          },
+          "matchingColumns": [
+            "mail "
+          ],
+          "schema": [
+            {
+              "id": "name ",
+              "displayName": "name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mail ",
+              "displayName": "mail ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Question 1",
+              "displayName": "Question 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Question 2",
+              "displayName": "Question 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 1",
+              "displayName": "file 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title 1",
+              "displayName": "title 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author 1",
+              "displayName": "author 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary 1",
+              "displayName": "summary 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 2",
+              "displayName": "file 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title 2",
+              "displayName": "title 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author 2",
+              "displayName": "author 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary 2",
+              "displayName": "summary 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 3",
+              "displayName": "file 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        496
+      ],
+      "id": "b452a360-2bfb-47b9-a245-d4da245fb00b",
+      "name": "add links",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      uploadedFiles: items.map(item => {\n        return {\n          name: item.json.name || 'Unnamed file',\n          id: item.json.id,\n          url: `https://drive.google.com/file/d/${item.json.id}/view?usp=sharing`\n        };\n      })\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        496
+      ],
+      "id": "0609874c-2749-41f1-a2a7-0a858e3190c0",
+      "name": "Extract links"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      books: items.map(item => item.json.output)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        256
+      ],
+      "id": "59c3c43c-7a15-46ea-a89a-c5db8442b12a",
+      "name": "Output formatting"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 480,
+        "width": 816,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "f9d57a06-78ae-4d00-985e-19a9e54ca490",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 208,
+        "width": 336,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1296,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "78e276c1-d621-4ebf-a720-ef0694d0f2a0",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 480,
+        "width": 960,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1296,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "6462d83a-fcef-4c33-85cf-48293c7dd43b",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE",
+          "mode": "list",
+          "cachedResultName": "ENSSEA form dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2061900719,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IuYveA3-X-FJG8Gm-0U69dM75zbttyZ_LcAX4cLZ3tE/edit#gid=2061900719"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "mail ": "={{ $items(\"On form submission\").first().json.gmail }}\n",
+            "title 1": "={{ $json.books[0].title }}",
+            "author 1": "={{ $json.books[0].author }}",
+            "summary 1": "={{ $json.books[0].summary }}",
+            "title 2": "={{ $json.books[1].title }}",
+            "author 2": "={{ $json.books[1].author }}",
+            "summary 2": "={{ $json.books[1].summary }}",
+            "file 2": "=",
+            "file 1": "="
+          },
+          "matchingColumns": [
+            "mail "
+          ],
+          "schema": [
+            {
+              "id": "name ",
+              "displayName": "name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mail ",
+              "displayName": "mail ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Question 1",
+              "displayName": "Question 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Question 2",
+              "displayName": "Question 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 1",
+              "displayName": "file 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title 1",
+              "displayName": "title 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author 1",
+              "displayName": "author 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary 1",
+              "displayName": "summary 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 2",
+              "displayName": "file 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title 2",
+              "displayName": "title 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author 2",
+              "displayName": "author 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary 2",
+              "displayName": "summary 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file 3",
+              "displayName": "file 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2032,
+        256
+      ],
+      "id": "3c366e7a-0242-42fc-80a9-11fb87b731b6",
+      "name": "ADD analysis",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "score calculation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "File separation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "text analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "text analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "text analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "score calculation": {
+      "main": [
+        [
+          {
+            "node": "Recording the score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "text analysis": {
+      "main": [
+        [
+          {
+            "node": "Output formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File separation": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract links": {
+      "main": [
+        [
+          {
+            "node": "add links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output formatting": {
+      "main": [
+        [
+          {
+            "node": "ADD analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "On form submission": [
+      {
+        "Name": "mely",
+        "gmail": "melye@gmail.com",
+        "How are you": "its okey",
+        "Whay?": "i don't know",
+        "data": [
+          {
+            "filename": "Fiche de lecture_20250104_190203_٠٠٠٠.pdf",
+            "mimetype": "application/pdf",
+            "size": 32728
+          },
+          {
+            "filename": "Fiche de lecture_20250104_175905_٠٠٠٠ (1).pdf",
+            "mimetype": "application/pdf",
+            "size": 31667
+          }
+        ],
+        "submittedAt": "2025-10-23T19:31:11.113-04:00",
+        "formMode": "test"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0159a98ef5a5880ca55de7e71c7f9ee919f2875e4068323d1bab4e6b72823e48"
+  }
+}

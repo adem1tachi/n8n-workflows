@@ -1,0 +1,975 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "77bffecc-b13d-441b-8a2b-3e24b6b5355b",
+      "name": "When chat message received",
+      "webhookId": "b63e4e26-0b88-4137-8a68-745d6ff6146c"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Client ID"
+            },
+            {
+              "name": "Client Name"
+            },
+            {
+              "name": "Client phone number"
+            },
+            {
+              "name": "Client Order"
+            },
+            {
+              "name": "Action"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        128
+      ],
+      "id": "ecd95d59-3f98-40f6-aefb-b2039d875e60",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Action }}",
+                    "rightValue": "add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ec1192cc-90c8-4254-8bf5-e5d1013df3c1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "add"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7321d06c-9caa-4818-8636-446a024c19bd",
+                    "leftValue": "={{ $json.Action }}",
+                    "rightValue": "edit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edit"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "60af8d90-3bb6-4edd-a22a-21faa8ed457c",
+                    "leftValue": "={{ $json.Action }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1024,
+        112
+      ],
+      "id": "e9a7af6e-05cb-4b96-8ab7-d50591025def",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are “Khidma”, an intelligent AI customer service agent for an online store that sells both products and services.\nYou have two main responsibilities and you must never perform tasks outside these responsibilities.\nAlways respond in the same language the customer uses.\n\n====================================================\n#0 — Products & Services We Offer\n====================================================\n\nHere is the official list of available products and services.\nYou must not mention or describe anything outside this list.\n\nProducts:\n- English SCF booklet (Pink)\n- English SCF booklet (Blue)\n- Summaries and brochures for university modules (when available)\n\nServices:\n- Formatting research papers\n- Formatting presentations\n\n====================================================\n#1 — Responding to Customer Questions\n====================================================\n\nWhen a customer asks about:\n- a product or service\n- price, delivery, availability\n- features or specifications\n- general store information\n\n→ First, search the store’s knowledge base (vector database).\n→ Use the closest match to answer clearly and professionally.\n→ If no relevant data is found, answer using your general understanding without hallucinating.\n\nTone requirements:\n- friendly\n- concise\n- helpful\n- professional\n\nIMPORTANT:\n- Never create research, summaries, designs, or perform any service yourself.\n- Never invent product data. If unsure, say you will check.\n\n====================================================\n#2 — Handling Customer Orders (Create, Edit, Cancel)\n====================================================\n\nIf the customer wants to place, edit, or cancel an order:\n\n1. Identify the action:\n   - “add” → new order\n   - “edit” → modify an existing order\n   - “cancel” → cancel an order\n\n2. Collect ALL required fields:\n   - customer_name\n   - phone_number\n   - order_type (product or service)\n   - details (product/service description)\n   - options or additional notes\n\n\n3. After all data is collected:\n   → Generate a clean JSON with all fields EXACTLY as required.\n   → Send this JSON ONLY through the “Order Recorder” tool workflow.\n   → Wait for the tool’s response.\n\nIf the tool confirms success:\n- Say: “تم تسجيل الطلب بنجاح 🎉”\n- Or: “Your order has been updated successfully 🎉”\ndepending on the customer’s language.\n\nIMPORTANT:\n- Do NOT fulfill services (no summaries, designs, research, etc.)\n- Do NOT skip required fields.\n- Do NOT send the JSON in chat — only through the tool call.\n\n====================================================\n#3 — Communication Rules\n====================================================\n\n- Always respond in the user's language.\n- Be respectful, clear, organized.\n- If the customer only asks for information → answer normally.\n- If they want to order → switch immediately to structured data collection.\n- Never mix between conversation mode and order mode.\n\n====================================================\n#4 — Boundaries (Critical)\n====================================================\n\nYou MUST NOT:\n- Generate academic content, research, summaries, or designs.\n- Invent product data.\n- Register an order without complete required fields.\n- Perform tasks outside customer support + order handling.\n\nYour entire mission is:\n\n“Customer answers + Order data collection  \n→ JSON  \n→ Order Recorder Workflow  \n→ Final confirmation to the customer.”\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "44199047-fa40-4e25-8d37-443d63851aae",
+      "name": "father AI agent"
+    },
+    {
+      "parameters": {
+        "description": "This tool is used to process customer orders, including:\n\nCreating a new order\n\nModifying an existing order\n\nCancelling an order\n\n\nThe agent automatically fills in the required fields based on the user’s request.\nIf the tool returns any response, it indicates that the order has been successfully created, updated, or cancelled.",
+        "workflowId": {
+          "__rl": true,
+          "value": "XLIibilwcHNDCp1d",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/XLIibilwcHNDCp1d",
+          "cachedResultName": "multi agent test"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client Name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Client_Name', ``, 'string') }}",
+            "Client phone number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Client_phone_number', ``, 'string') }}",
+            "Client Order": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Client_Order', ``, 'string') }}",
+            "Client ID": "={{ $('When chat message received').item.json.sessionId }}",
+            "Action": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Action', `- \"Action\" = \"add\" for new orders  \n- \"Action\" = \"edit\" for modifications  \n- \"Action\" = \"cancel\" for cancellations`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client ID",
+              "displayName": "Client ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Client phone number",
+              "displayName": "Client phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Client Order",
+              "displayName": "Client Order",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        240
+      ],
+      "id": "00160949-d678-41c0-bf7b-d1d7844b9159",
+      "name": "Order Recorder Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I",
+          "mode": "list",
+          "cachedResultName": "Orders dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Clint name": "={{ $json[\"Client Name\"] }}",
+            "Clint order details ": "={{ $json[\"Client Order\"] }}",
+            "Clint id": "={{ $json[\"Client ID\"] }}",
+            "Clint phone number ": "={{ $json[\"Client phone number\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Clint name",
+              "displayName": "Clint name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint phone number ",
+              "displayName": "Clint phone number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint order details ",
+              "displayName": "Clint order details ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint id",
+              "displayName": "Clint id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action ",
+              "displayName": "action ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        -32
+      ],
+      "id": "dccd3cf1-1b3a-4532-bdf3-39dd62f53c5d",
+      "name": "add order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I",
+          "mode": "list",
+          "cachedResultName": "Orders dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Clint id": "={{ $json[\"Client ID\"] }}",
+            "Clint name": "={{ $json[\"Client Name\"] }}",
+            "Clint phone number ": "={{ $json[\"Client phone number\"] }}",
+            "Clint order details ": "={{ $json[\"Client Order\"] }}",
+            "action ": "edited"
+          },
+          "matchingColumns": [
+            "Clint id"
+          ],
+          "schema": [
+            {
+              "id": "Clint name",
+              "displayName": "Clint name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint phone number ",
+              "displayName": "Clint phone number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint order details ",
+              "displayName": "Clint order details ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint id",
+              "displayName": "Clint id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action ",
+              "displayName": "action ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        128
+      ],
+      "id": "27a343f3-2d61-49e2-9096-c3a3c79f9332",
+      "name": "edit order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I",
+          "mode": "list",
+          "cachedResultName": "Orders dimo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17iiXGR9wpwg3t4dRrAhHBrgVEi_NS1pF_xCPb_ka4_I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Clint id": "={{ $json[\"Client ID\"] }}",
+            "Clint name": "={{ $json[\"Client Name\"] }}",
+            "Clint phone number ": "={{ $json[\"Client phone number\"] }}",
+            "Clint order details ": "={{ $json[\"Client Order\"] }}",
+            "action ": "fuck"
+          },
+          "matchingColumns": [
+            "Clint id"
+          ],
+          "schema": [
+            {
+              "id": "Clint name",
+              "displayName": "Clint name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint phone number ",
+              "displayName": "Clint phone number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint order details ",
+              "displayName": "Clint order details ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clint id",
+              "displayName": "Clint id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "action ",
+              "displayName": "action ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        288
+      ],
+      "id": "84c895c4-8ac0-4436-9ab9-f89eb255e80d",
+      "name": "cancel order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UiWnNucJ4GrwQ8Sy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=1316180595 ",
+        "text": "=🛒 Hello there 👋   \nA new order has been received 🎉  \n👤 Name: {{ $json[\"Clint name\"] }}\n📞 Phone: {{ $json[\"Clint phone number \"] }}\n🧾 Details: {{ $json[\"Clint order details \"] }} \n\n🆔 Client ID: {{ $json[\"Clint id\"] }}\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        -32
+      ],
+      "id": "ad156061-3d37-48dd-8dca-43a22150466a",
+      "name": "Telegram notifications 0",
+      "webhookId": "bdb175cf-ac0d-4a40-96dd-6a5b757c78cb",
+      "credentials": {
+        "telegramApi": {
+          "id": "rRlW0RuxQsMIADcT",
+          "name": "khidma prv"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "1316180595",
+        "text": "=🛒 Hello there 👋   \nAn order update has been received ✏️  \n👤 Name: {{ $json['Clint name'] }}  \n📞 Phone: {{ $json['Clint phone number '] }} \n🧾 Details: {{ $json['Clint order details '] }}  \n\n🆔 Client ID: {{ $json['Clint id'] }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        128
+      ],
+      "id": "857d24a3-0c5e-4266-971f-860d2fb3cc55",
+      "name": "Telegram notifications 1",
+      "webhookId": "bdb175cf-ac0d-4a40-96dd-6a5b757c78cb",
+      "credentials": {
+        "telegramApi": {
+          "id": "rRlW0RuxQsMIADcT",
+          "name": "khidma prv"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "1316180595",
+        "text": "=❌ Order Cancelled\n\n👤 Name: {{ $json[\"Clint name\"] }}\n📞 Phone: {{ $json[\"Clint phone number \"] }}\n🆔 Client ID: {{ $json[\"Clint id\"] }}\n\n🗑️ The order has been successfully deleted from the sheet.\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        288
+      ],
+      "id": "c620196b-36fa-4e56-973f-428ff62f3c53",
+      "name": "Telegram notifications 2",
+      "webhookId": "bdb175cf-ac0d-4a40-96dd-6a5b757c78cb",
+      "credentials": {
+        "telegramApi": {
+          "id": "rRlW0RuxQsMIADcT",
+          "name": "khidma prv"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        240
+      ],
+      "id": "4a424a82-6d76-43ec-9467-f03b05f56c9f",
+      "name": "Brain",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ZqNv4FkOmMFwZsM7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to search our internal database of services and information. \nProvide the customer question as input. \nThe tool will return the most relevant information from the database. \nIf the tool returns no useful results, respond from your general knowledge politely.\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "dimo",
+          "mode": "list",
+          "cachedResultName": "dimo"
+        },
+        "options": {
+          "pineconeNamespace": "FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        240
+      ],
+      "id": "8f42bbc8-58ef-46e9-87dd-da913be040e1",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "nO9328iepYA9klkP",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        560,
+        448
+      ],
+      "id": "fab46623-350f-4385-a212-93d675756243",
+      "name": "Embeddings Mistral Cloud",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "EyeekGskej0qZKHR",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": "chat_history1"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        240
+      ],
+      "id": "14399830-9668-4251-8f3a-b7314f8632a8",
+      "name": "local host memory",
+      "credentials": {
+        "postgres": {
+          "id": "H57MGPu8Z7RLShPh",
+          "name": "Postgres local host"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        0
+      ],
+      "id": "e1e6f907-255d-42f4-a3bd-c3934e187ad3",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "H57MGPu8Z7RLShPh",
+          "name": "Postgres local host"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        208
+      ],
+      "id": "c906592c-d896-424c-ac10-4a2e79b90070",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        208
+      ],
+      "id": "e6222b9c-9019-4043-bf5c-8d384628237c",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ZqNv4FkOmMFwZsM7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1p20twpfDOjUKrVCaP2daF4SUQzj_M-Fu",
+          "mode": "list",
+          "cachedResultName": "FAQ",
+          "cachedResultUrl": "https://drive.google.com/file/d/1p20twpfDOjUKrVCaP2daF4SUQzj_M-Fu/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -912,
+        0
+      ],
+      "id": "e1ddd3a8-7f3e-4bfc-8ce3-2c1ffde8794c",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3evy9gWg3pjgdGUH",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "father AI agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "add order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "edit order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "cancel order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Recorder Workflow": {
+      "ai_tool": [
+        [
+          {
+            "node": "father AI agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "add order": {
+      "main": [
+        [
+          {
+            "node": "Telegram notifications 0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "edit order": {
+      "main": [
+        [
+          {
+            "node": "Telegram notifications 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cancel order": {
+      "main": [
+        [
+          {
+            "node": "Telegram notifications 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brain": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "father AI agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "father AI agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Mistral Cloud": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "local host memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "father AI agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "Client ID": "7d85f1643d0e417fa20205ade2d0b2df",
+        "Client Name": "أحمد",
+        "Client phone number": "55544434",
+        "Client Order": "واحد من كل منتج",
+        "Action": "add"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0159a98ef5a5880ca55de7e71c7f9ee919f2875e4068323d1bab4e6b72823e48"
+  }
+}
